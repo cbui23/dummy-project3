@@ -2,7 +2,8 @@ import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
 import CustomerPage from "./pages/CustomerPage";
 import ManagerStats from "./components/ManagerStats";
 import KitchenPage from "./pages/KitchenPage";
-
+import MenuBoardPage from "./pages/MenuBoardPage";
+import CashierPage from "./pages/CashierPage";
 
 function HomePage() {
   return (
@@ -22,7 +23,15 @@ function HomePage() {
         <Link to="/kitchen">
           <button>Kitchen View</button>
         </Link>
-      </div>
+      
+	<Link to = "/menuboard">
+	  <button>Menu Board</button>
+	</Link>
+	</div>
+	
+	<Link to = "/cashierpage">
+	  <button>Cashier Page</button>
+	</Link>
     </div>
   );
 }
@@ -65,6 +74,8 @@ export default function App() {
         <Route path="/customer" element={<CustomerPage />} />
         <Route path="/admin" element={<AdminPlaceholder />} />
         <Route path="/kitchen" element={<KitchenPage />} />
+	<Route path = "/menuboard" element = {<MenuBoardPage />} />
+	<Route path = "/cashierpage" element = {<CashierPage />} />	
       </Routes>
     </BrowserRouter>
   );
