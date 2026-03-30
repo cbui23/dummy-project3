@@ -41,4 +41,31 @@ router.get("/top-items", async (req, res) => {
   }
 });
 
+//get product usage chart
+router.get('/product-usage', async (req, res) => {
+    const { startDate, endDate } = req.query;
+
+    try {
+        const query = `
+            SELECT 
+                i.name AS inventory_item,
+                SUM(oi.quantity * r.quantity) AS total_usage,
+                i.unit
+            FROM orders o
+            JOIN orderitems oi ON o.order_id = oi.order_id
+            JOIN recipes r ON oi.menu_item_id = r.menu_item_id
+            JOIN inventory i ON r.inventory_id = i.inventory_id
+            WHERE o.date BETWEEN $1 AND $2
+            GROUP BY i.name, i.unit
+            ORDER BY total_usage DESC;
+        `;
+        
+        const result = await pool.query(query, [startDate, endDate]);
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send("Server Error fetching product usage");
+    }
+});
+
 export default router;
