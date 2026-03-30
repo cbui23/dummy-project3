@@ -50,3 +50,15 @@ export async function updateOrderStatus(orderId, status) {
   if (!response.ok) throw new Error("Failed to update order status");
   return response.json();
 }
+
+export async function fetchProductUsage(startDate, endDate) {
+  // Use the same API_BASE constant to stay consistent
+  const response = await fetch(`${API_BASE}/manager/product-usage?startDate=${startDate}&endDate=${endDate}`);
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to fetch usage data");
+  }
+  
+  return response.json();
+}
