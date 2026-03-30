@@ -3,7 +3,10 @@ import CustomerPage from "./pages/CustomerPage";
 import ManagerStats from "./components/ManagerStats";
 import KitchenPage from "./pages/KitchenPage";
 import MenuBoardPage from "./pages/MenuBoardPage";
+<<<<<<< HEAD
 import CashierPage from "./pages/CashierPage";
+=======
+>>>>>>> christian
 
 function HomePage() {
   return (
@@ -23,6 +26,7 @@ function HomePage() {
         <Link to="/kitchen">
           <button>Kitchen View</button>
         </Link>
+<<<<<<< HEAD
       
 	<Link to = "/menuboard">
 	  <button>Menu Board</button>
@@ -32,6 +36,13 @@ function HomePage() {
 	<Link to = "/cashierpage">
 	  <button>Cashier Page</button>
 	</Link>
+=======
+
+        <Link to="/menu-board">
+          <button>Menu Board</button>
+        </Link>
+      </div>
+>>>>>>> christian
     </div>
   );
 }
@@ -40,11 +51,16 @@ function AdminPlaceholder() {
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
       <h1>Admin Dashboard</h1>
-      
-      {/* THIS IS YOUR MAJOR CONTRIBUTION */}
-      <ManagerStats /> 
-      
-      <div style={{ marginTop: "2rem", borderTop: "1px solid #ccc", paddingTop: "1rem" }}>
+
+      <ManagerStats />
+
+      <div
+        style={{
+          marginTop: "2rem",
+          borderTop: "1px solid #ccc",
+          paddingTop: "1rem",
+        }}
+      >
         <p>Advanced Inventory and Employee tools coming soon.</p>
         <Link to="/">
           <button style={{ marginTop: "1rem" }}>Back to Portal</button>
@@ -74,8 +90,12 @@ export default function App() {
         <Route path="/customer" element={<CustomerPage />} />
         <Route path="/admin" element={<AdminPlaceholder />} />
         <Route path="/kitchen" element={<KitchenPage />} />
+<<<<<<< HEAD
 	<Route path = "/menuboard" element = {<MenuBoardPage />} />
 	<Route path = "/cashierpage" element = {<CashierPage />} />	
+=======
+        <Route path="/menu-board" element={<MenuBoardPage />} />
+>>>>>>> christian
       </Routes>
     </BrowserRouter>
   );
