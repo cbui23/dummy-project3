@@ -2,7 +2,7 @@ import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
 import CustomerPage from "./pages/CustomerPage";
 import ManagerStats from "./components/ManagerStats";
 import KitchenPage from "./pages/KitchenPage";
-
+import MenuBoardPage from "./pages/MenuBoardPage";
 
 function HomePage() {
   return (
@@ -22,7 +22,11 @@ function HomePage() {
         <Link to="/kitchen">
           <button>Kitchen View</button>
         </Link>
-      </div>
+      
+	<Link to = "/menuboard">
+	  <button>Menu Board</button>
+	</Link>
+	</div>
     </div>
   );
 }
@@ -65,7 +69,8 @@ export default function App() {
         <Route path="/customer" element={<CustomerPage />} />
         <Route path="/admin" element={<AdminPlaceholder />} />
         <Route path="/kitchen" element={<KitchenPage />} />
-      </Routes>
+	<Route path = "/menuboard" element = {<MenuBoardPage />} />
+	</Routes>
     </BrowserRouter>
   );
 }
