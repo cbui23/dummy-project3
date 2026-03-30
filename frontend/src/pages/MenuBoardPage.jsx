@@ -18,6 +18,7 @@ export default function MenuBoardPage(){
 	
 	return(
 		<div id = "center"> 
+		<a href="/">Back to Portal</a>
 			<h1 className = "hero">Reveille Bubble Tea Menu</h1>
 				{/* grid layout*/}
 			<div id = "next-steps" style = {{ flexWrap: 'wrap', border: 'none'}}>
