@@ -15,7 +15,9 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/menu", menuRoutes);
+app.use("/menu", menuRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/orders", orderRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/manager", managerRoutes);
 
