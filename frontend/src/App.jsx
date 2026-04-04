@@ -6,7 +6,6 @@ import KitchenPage from "./pages/KitchenPage";
 import MenuBoardPage from "./pages/MenuBoardPage";
 import CashierPage from "./pages/CashierPage";
 
-// The Manager Dashboard View
 function AdminPlaceholder() {
   return (
     <div style={{ 
@@ -25,7 +24,6 @@ function AdminPlaceholder() {
 
       <div style={{ marginTop: "3rem", borderTop: "1px solid #2e303a", paddingTop: "2rem" }}>
         <p style={{ color: "#9ca3af" }}>Advanced Inventory and Employee tools coming soon.</p>
-        
         <Link to="/">
           <button style={{ 
             marginTop: "2rem", 
@@ -50,10 +48,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Main Landing Page */}
         <Route path="/" element={<PortalPage />} />
-        
-        {/* System Pages */}
         <Route path="/customer" element={<CustomerPage />} />
         <Route path="/manager" element={<AdminPlaceholder />} /> 
         <Route path="/kitchen" element={<KitchenPage />} />
