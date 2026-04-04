@@ -4,7 +4,6 @@ import menuRoutes from "./routes/menuRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import inventoryRoutes from "./routes/inventoryRoutes.js";
 import managerRoutes from "./routes/managerRoutes.js";
-import cors from "cors";
 const app = express();
 
 app.use(cors());
