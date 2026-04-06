@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchMenu, placeOrder } from "../services/api";
+import Weather from '../components/Weather'; // Added Weather import
 
 export default function CustomerPage() {
   const [menuItems, setMenuItems] = useState([]);
@@ -63,7 +64,7 @@ export default function CustomerPage() {
       const result = await placeOrder(payload);
       setMessage(`Success! Order #${result.order_id} is being prepared.`);
       setCart([]);
-      setTimeout(() => setMessage(""), 5000); // Clear message after 5s
+      setTimeout(() => setMessage(""), 5000); 
     } catch (err) {
       setMessage(err.message || "Failed to place order.");
     }
@@ -77,10 +78,15 @@ export default function CustomerPage() {
 
   return (
     <div style={pageContainer}>
-      {/* Header Area */}
+      {/* Header Area with Weather integrated */}
       <header style={headerStyle}>
-        <h1 style={{ margin: 0, fontSize: "2.5rem", fontWeight: "900" }}>BOBA SHOP</h1>
-        <p style={{ color: "#aa3bff", fontWeight: "bold", letterSpacing: "2px" }}>SELECT YOUR DRINK</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '1400px', margin: '0 auto' }}>
+            <div style={{ textAlign: 'left' }}>
+                <h1 style={{ margin: 0, fontSize: "2.5rem", fontWeight: "900" }}>BOBA SHOP</h1>
+                <p style={{ color: "#aa3bff", fontWeight: "bold", letterSpacing: "2px", margin: 0 }}>SELECT YOUR DRINK</p>
+            </div>
+            <Weather /> {/* Weather added to header */}
+        </div>
       </header>
 
       {message && (
@@ -160,7 +166,7 @@ export default function CustomerPage() {
   );
 }
 
-// --- STYLES ---
+// --- STYLES (Kept existing styles for consistency) ---
 
 const pageContainer = {
   backgroundColor: "#16171d",
@@ -171,8 +177,9 @@ const pageContainer = {
 };
 
 const headerStyle = {
-  textAlign: "center",
   marginBottom: "3rem",
+  borderBottom: "1px solid #2e303a",
+  paddingBottom: "1rem"
 };
 
 const mainGrid = {

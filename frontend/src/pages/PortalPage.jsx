@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import Weather from "../components/Weather";
 
 export default function PortalPage() {
   const cardStyle = {
@@ -40,9 +41,19 @@ export default function PortalPage() {
       flexDirection: "column",
       alignItems: "center",
       justifyContent: "center",
-      padding: "2rem"
+      padding: "2rem",
+      position: "relative" // Added to help with weather placement
     }}>
       
+      {/* Weather Section - Positioned at the top */}
+      <div style={{ 
+        position: "absolute", 
+        top: "2rem", 
+        right: "2rem" 
+      }}>
+        <Weather />
+      </div>
+
       {/* Header Section */}
       <div style={{ textAlign: "center", marginBottom: "5rem" }}>
         <h1 style={{ 
@@ -60,7 +71,7 @@ export default function PortalPage() {
           marginTop: "20px", 
           fontWeight: "800", 
           textTransform: "uppercase",
-          letterSpacing: "4px"
+          letterSpacing: "4px" 
         }}>
           System Portal
         </p>
