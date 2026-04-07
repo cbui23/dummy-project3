@@ -13,6 +13,7 @@ export default function CustomerPage() {
   const [showToppings, setShowToppings] = useState(false);
   const [pendingItem, setPendingItem] = useState(null);
   const [selectedToppings, setSelectedToppings] = useState([]);
+  const [weatherTemp, setWeatherTemp] = useState(null); //used for weather based recommendations
 
   useEffect(() => {
     async function loadMenu() {
@@ -26,6 +27,15 @@ export default function CustomerPage() {
     }
     loadMenu();
   }, []);
+
+  useEffect(() => {
+    fetch("http://localhost:8080/api/weather")
+	.then(res => res.json())
+	.then(data => setWeatherTemp(data.temp))
+	.catch(err => console.error("Weather fetch failed:", err));
+
+  }, []);
+
 
   const getCleanCat = (item) => item.category ? item.category.toString().trim().toLowerCase() : "";
 
@@ -41,9 +51,19 @@ export default function CustomerPage() {
   const filteredItems = useMemo(() => {
     const drinks = menuItems.filter(item => getCleanCat(item) !== 'topping');
     if (activeCategory === "all") return drinks;
-    if(activeCategory == "recommended") return drinks; //temporary 
+    if(activeCategory == "recommended"){ //weather based recommendations tab
+	if(weatherTemp == null) return drinks; //incase not working
+	let tempRec;
+	const tempInflectionPt = 70; //can adjust this later
+	if(weatherTemp < tempInflectionPt){
+	    tempRec = "H"; //for cold temp recommend hot drinks
+	}else {
+	    tempRec = "C" //hot temp rec cold drinks
+	}
+	return drinks.filter(item => item.temperature  === tempRec);
+    } 
     return drinks.filter(item => getCleanCat(item) === activeCategory);
-  }, [menuItems, activeCategory]);
+  }, [menuItems, activeCategory, weatherTemp]);
 
   // Total Quantity logic
   const totalItemsCount = useMemo(() => 
