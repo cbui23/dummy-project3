@@ -23,6 +23,10 @@ export default function CustomerPage() {
   const [selectedToppings, setSelectedToppings] = useState([]);
   const [weatherTemp, setWeatherTemp] = useState(null); //used for weather based recommendations
 
+  const [gachaResult, setGachaResult] = useState(null);
+  const [gachaRolls, setGachaRolls] = useState(3);
+  const [gachaSpinning, setGachaSpinning] = useState(false);
+
   useEffect(() => {
     async function loadMenu() {
       try {
@@ -46,6 +50,30 @@ export default function CustomerPage() {
 
 
   const getCleanCat = (item) => item.category ? item.category.toString().trim().toLowerCase() : "";
+
+  //gacha beyond feature (1)
+  const doGacha = () => {
+  if (gachaRolls <= 0 || gachaSpinning) return;
+  setGachaSpinning(true);
+  setGachaResult(null);
+
+  setTimeout(() => {
+    const drinks = menuItems.filter(item => getCleanCat(item) !== 'topping');
+    let pool = drinks;
+    if (weatherTemp !== null) {
+      const preferred = weatherTemp >= 70 ? 'C' : 'H';
+      const biased = drinks.filter(d => d.temperature === preferred);
+      pool = [...biased, ...biased, ...drinks]; // 2x weight for weather match
+    }
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    const rarityRoll = Math.random();
+    const rarity = rarityRoll < 0.6 ? 'Common' : rarityRoll < 0.9 ? 'Rare' : 'Ultra Rare';
+    const rarityColor = rarity === 'Ultra Rare' ? '#f59e0b' : rarity === 'Rare' ? '#8b5cf6' : '#2d6a4f';
+    setGachaResult({ ...pick, rarity, rarityColor });
+    setGachaRolls(prev => prev - 1);
+    setGachaSpinning(false);
+  }, 1000);
+};
 
   const toppingsOptions = useMemo(() => 
     menuItems.filter(item => getCleanCat(item) === 'topping'), 
@@ -202,6 +230,49 @@ export default function CustomerPage() {
       </header>
 
       {message && <div style={auraNotification}>{message}</div>}
+
+      {/* Gacha Section */}
+<div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+  <button
+    onClick={doGacha}
+    disabled={gachaRolls <= 0 || gachaSpinning}
+    style={{
+      background: gachaRolls <= 0 ? '#94a3b8' : '#1b4332',
+      color: 'white', border: 'none', borderRadius: '50px',
+      padding: '12px 30px', fontWeight: '800', fontSize: '1rem',
+      cursor: gachaRolls <= 0 ? 'not-allowed' : 'pointer'
+    }}
+  >
+    {gachaSpinning ? '🧋 spinning...' : `🎲 surprise me (${gachaRolls} left)`}
+  </button>
+
+  {gachaResult && (
+    <div style={{
+      marginTop: '1rem', display: 'inline-block',
+      background: 'white', borderRadius: '20px', padding: '1rem 2rem',
+      border: `2px solid ${gachaResult.rarityColor}`,
+      boxShadow: `0 0 15px ${gachaResult.rarityColor}44`
+    }}>
+      <div style={{ fontSize: '0.7rem', fontWeight: '800', color: gachaResult.rarityColor, textTransform: 'uppercase', letterSpacing: '2px' }}>
+        {gachaResult.rarity}
+      </div>
+      <div style={{ fontWeight: '700', color: '#1b4332', fontSize: '1.1rem' }}>
+        {gachaResult.name.toLowerCase()}
+      </div>
+      <div style={{ fontSize: '0.85rem', color: '#64748b' }}>${Number(gachaResult.base_price).toFixed(2)}</div>
+      <button
+        onClick={() => openToppings(gachaResult)}
+        style={{
+          marginTop: '8px', background: '#2d6a4f', color: 'white',
+          border: 'none', borderRadius: '50px', padding: '6px 16px',
+          fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer'
+        }}
+      >
+        add to order
+      </button>
+    </div>
+  )}
+</div>
 
       <div style={tabContainer}>
         {categories.map(cat => (
