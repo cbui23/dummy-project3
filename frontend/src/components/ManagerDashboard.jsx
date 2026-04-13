@@ -10,6 +10,14 @@ export default function ManagerDashboard() {
         { id: 3, text: "Verify weekend inventory shipment", completed: false },
         { id: 4, text: "Prepare quarterly revenue report", completed: false }
     ]);
+    const [menuForm, setMenuForm] = useState({
+	name: '',
+	category: '',
+	base_price: '',
+	description: '',
+	recipe_id: '',
+	temperature: ''
+    });
 
     useEffect(() => {
         refreshData();
@@ -43,48 +51,59 @@ export default function ManagerDashboard() {
         }
     };
 
-    // 🔥 NEW: Menu item creator
-    const addMenuItem = async () => {
-        const name = prompt("Item name:");
-        const category = prompt("Category:");
-        const base_price = prompt("Price:");
-        const description = prompt("Description:");
-        const recipe_id = prompt("Recipe ID (optional):");
-        const temperature = prompt("Temperature (H/C):")?.toUpperCase();
+    //Add menu item feature
+    const submitMenuItem = async () => {
+        if(
+            !menuForm.name ||
+            !menuForm.category ||
+            !menuForm.base_price ||
+	    isNaN(parseFloat(menuForm.base_price)) ||
+            !(menuForm.temperature === 'H' || menuForm.temperature === 'C')
+        ){
+            alert("Fill all required fields before proceeding.");
+            return;
+	} 
 
-        if (
-            name &&
-            category &&
-            base_price &&
-            !isNaN(parseFloat(base_price)) &&
-            (temperature === 'H' || temperature === 'C')
-        ) {
-            try {
-                const res = await fetch("http://localhost:8080/api/menuitems", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        name,
-                        category,
-                        base_price: parseFloat(base_price),
-                        description,
-                        recipe_id: recipe_id ? parseInt(recipe_id) : null,
-                        temperature
-                    })
-                });
+        try{
+	    const res = await fetch("http://localhost:8080/api/menu/menuitems", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                menu_item_id: Math.floor(Math.random() * 100000), //temp fix, but will change to incremental
+                name: menuForm.name,
+                category: menuForm.category,
+                base_price: parseFloat(menuForm.base_price),
+                description: menuForm.description,
+                recipe_id: menuForm.recipe_id ? parseInt(menuForm.recipe_id) : null,
+                temperature: menuForm.temperature
+            })
+        });
 
-                if (res.ok) {
-                    alert("Menu item added!");
-                } else {
-                    alert("Failed to add item.");
-                }
-            } catch (err) {
-                alert("Error adding item.");
-            }
-        } else {
-            alert("Invalid input.");
+        const errno = await res.text();
+
+        if(res.ok){
+            alert("Menu item added!");
+
+            //reset field after successufl addition
+            setMenuForm({
+                name: '',
+                category: '',
+                base_price: '',
+                description: '',
+                recipe_id: '',
+                temperature: ''
+            });
+
+        } else{
+            alert("Error: " + errno);
         }
-    };
+
+    }catch(err){
+        console.error(err);
+        alert("Network error.");
+    }
+};
+          
 
     const lowStockData = (inventory || []).slice(0, 10).map(item => ({
         ...item,
@@ -157,21 +176,65 @@ export default function ManagerDashboard() {
                     ))}
                 </div>
 
-                {/* 🔥 NEW MENU MANAGEMENT CARD */}
+                {/* NEW ITEM MANAGEMENT CARD */}
                 <div style={cardStyle}>
                     <div style={cardHeader}>
-                        <h3>Menu Management</h3>
+                        <h3>Add Menu Items</h3>
                     </div>
 
-                    <div style={{ textAlign: 'center', marginTop: '30px' }}>
-                        <button onClick={addMenuItem} style={addBtnStyle}>
+                    <div style={{ dispaly: 'flex', flexDirection: 'column', marginTop: '20px', gap: '12px' }}>
+			<input 
+			    placeholder = "Item Name"
+			    value = {menuForm.name}
+			    onChange={(e) => setMenuForm({ ...menuForm, name: e.target.value })}
+			    style={inputStyle}
+			/>
+
+			<input
+			    placeholder="Category"
+                            value={menuForm.category}
+                            onChange={(e) => setMenuForm({ ...menuForm, category: e.target.value })}
+                            style={inputStyle}
+                        />
+
+			<input
+                            placeholder="Base Price (e.g. 5.00)"
+                            value={menuForm.base_price}
+                            onChange={(e) => setMenuForm({ ...menuForm, base_price: e.target.value })}
+                            style={inputStyle}
+                        />
+
+                        <input
+                            placeholder="Description"
+                            value={menuForm.description}
+                            onChange={(e) => setMenuForm({ ...menuForm, description: e.target.value })}
+                            style={inputStyle}
+                        />
+
+                        <input
+                            placeholder="Recipe ID (optional)"
+                            value={menuForm.recipe_id}
+                            onChange={(e) => setMenuForm({ ...menuForm, recipe_id: e.target.value })}
+                            style={inputStyle}
+                        />
+
+                        <select
+                            value={menuForm.temperature}
+                            onChange={(e) => setMenuForm({ ...menuForm, temperature: e.target.value })}
+                            style={inputStyle}
+                        >
+                            <option value="">Select Temperature</option>
+                            <option value="C">Cold</option>
+                            <option value="H">Hot</option>
+                        </select>
+
+                        <button onClick={submitMenuItem} style={addBtnStyle}>
                             + Add New Menu Item
-                        </button>
-                    </div>
+                        </button>                        
 
-                    <p style={{ marginTop: '20px', fontSize: '12px', textAlign: 'center', color: '#64748b' }}>
-                        Create new drinks and menu offerings for customers.
-                    </p>
+
+
+                    </div>
                 </div>
 
             </div>
@@ -195,3 +258,9 @@ const listItemStyle = { display: 'flex', justifyContent: 'space-between', paddin
 
 const badgeStyle = { backgroundColor: '#fee2e2', padding: '4px 12px', borderRadius: '20px' };
 const addBtnStyle = { backgroundColor: '#1b4332', color: 'white', padding: '10px 18px', borderRadius: '10px', cursor: 'pointer' };
+const inputStyle = {
+    padding: '10px',
+    borderRadius: '8px',
+    border: '1px solid #cbd5e1',
+    fontSize: '14px'
+};
