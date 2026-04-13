@@ -57,23 +57,31 @@ router.post('/z-report', async (req, res) => {
             return res.status(400).json({ error: "Z-Report already generated for today." });
         }
 
-        // 2. Fetch final totals for the display
+        // 2. Fetch final totals
         const fetchSql = `
-            SELECT SUM(total_amount) as sales, 
-            COUNT(CASE WHEN status = 'Void' THEN 1 END) as voids, 
-            COUNT(CASE WHEN status = 'Discard' THEN 1 END) as discards 
+            SELECT 
+                COALESCE(SUM(total_amount), 0) as sales, 
+                COUNT(CASE WHEN status = 'Void' THEN 1 END) as voids, 
+                COUNT(CASE WHEN status = 'Discard' THEN 1 END) as discards 
             FROM orders WHERE z_reported = FALSE AND date = CURRENT_DATE`;
         const totals = await client.query(fetchSql);
+        const reportData = totals.rows[0];
 
-        // 3. Mark all current orders as reported (The "Reset")
+        // 3. Mark all current orders as reported
         const resetSql = "UPDATE orders SET z_reported = TRUE WHERE z_reported = FALSE AND date = CURRENT_DATE";
         await client.query(resetSql);
 
         await client.query('COMMIT');
+
+        // Send a clean, flat object to the frontend
         res.json({ 
-            report: totals.rows[0], 
-            manager: req.body.manager,
-            timestamp: new Date().toLocaleString()
+            sales: parseFloat(reportData.sales),
+            voids: parseInt(reportData.voids),
+            discards: parseInt(reportData.discards),
+            tax: parseFloat(reportData.sales) * 0.0825,
+            total: parseFloat(reportData.sales) * 1.0825,
+            date: new Date().toLocaleDateString(),
+            timestamp: new Date().toLocaleTimeString()
         });
     } catch (err) {
         await client.query('ROLLBACK');

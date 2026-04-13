@@ -88,16 +88,28 @@ export default function ManagerDashboard() {
     };
 
     const runZReport = async () => {
-        if (!window.confirm("CRITICAL: This will reset daily values. Proceed?")) return;
-        try {
-            const res = await fetch("http://localhost:8080/api/reports/z-report", { method: "POST" });
-            const data = await res.json();
-            if (res.ok) {
-                setZOutput(data);
-                setIsZDisabled(true);
-            }
-        } catch (err) { alert("Z-Report Error"); }
-    };
+    if (!window.confirm("Run Z-Report and reset daily totals? This cannot be undone.")) return;
+
+    try {
+        const res = await fetch("http://localhost:8080/api/reports/z-report", { 
+            method: "POST" 
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+            setZOutput(data); 
+            setIsZDisabled(true);
+            setXData([]); // Clear the chart
+        } else {
+            // Alert the user if the backend says it was already run
+            alert(data.error || "Failed to run Z-Report");
+            if (res.status === 400) setIsZDisabled(true);
+        }
+    } catch (err) {
+        console.error("Z-Report failed:", err);
+        alert("Network error: Check if backend is running.");
+    }
+};
 
     const hireEmployee = async () => {
         const name = prompt("Enter employee name:");
@@ -136,11 +148,6 @@ export default function ManagerDashboard() {
                 </div>
                 <div style={dateBox}>{new Date().toLocaleDateString()}</div>
             </header>
-
-            <div style={statStrip}>
-                <div style={miniStatCard}><span style={labelStyle}>Total Revenue</span><h2 style={statValue}>${Number(stats.total_revenue).toLocaleString()}</h2></div>
-                <div style={miniStatCard}><span style={labelStyle}>Total Orders</span><h2 style={statValue}>{stats.total_orders.toLocaleString()}</h2></div>
-            </div>
 
             <div style={dashboardGrid}>
                 {/* LOW STOCK ALERTS */}
@@ -247,25 +254,34 @@ export default function ManagerDashboard() {
                 )}
 
                     {activeTab === 'zreport' && (
-                        <div style={{textAlign: 'center', padding: '40px'}}>
-                            <button onClick={runZReport} disabled={isZDisabled} style={isZDisabled ? {...zBtnStyle, opacity: 0.5, cursor: 'not-allowed'} : zBtnStyle}>Run Z-Report & Reset Day</button>
-                            {zOutput && (
-                                <div style={zTapeStyle}>
-                                    <pre style={monospaceStyle}>
-{`========== REVEILLE BOBA Z-REPORT ==========
-Date:    ${zOutput.date || new Date().toLocaleDateString()}
---------------------------------------------
-Gross Sales:     $${parseFloat(zOutput.sales || 0).toFixed(2)}
-Tax (8.25%):     $${parseFloat(zOutput.tax || 0).toFixed(2)}
-TOTAL REVENUE:   $${(parseFloat(zOutput.sales || 0) * 1.0825).toFixed(2)}
---------------------------------------------
-Voids: ${zOutput.voids || 0} | Discards: ${zOutput.discards || 0}
-============================================`}
-                                    </pre>
-                                </div>
-                            )}
-                        </div>
-                    )}
+                    <div style={{ textAlign: 'center', padding: '40px' }}>
+                        <button 
+                            onClick={runZReport} 
+                            disabled={isZDisabled} 
+                            style={isZDisabled ? { ...zBtnStyle, opacity: 0.5, cursor: 'not-allowed' } : zBtnStyle}
+                        >
+                            {isZDisabled ? "Z-Report Already Run Today" : "Run Z-Report & Reset Day"}
+                        </button>
+                        
+                        {zOutput && (
+                            <div style={zTapeStyle}>
+                                <pre style={monospaceStyle}>
+                {`========== REVEILLE BOBA Z-REPORT ==========
+                Date:      ${zOutput.date}
+                Time:      ${zOutput.timestamp}
+                --------------------------------------------
+                Gross Sales:     $${zOutput.sales.toFixed(2)}
+                Tax (8.25%):     $${zOutput.tax.toFixed(2)}
+                TOTAL REVENUE:   $${zOutput.total.toFixed(2)}
+                --------------------------------------------
+                Voids: ${zOutput.voids} | Discards: ${zOutput.discards}
+                ============================================
+                STATUS: Daily Totals Reset Successfully.`}
+                                </pre>
+                            </div>
+                        )}
+                    </div>
+                )}
                 </div>
             </div>
         </div>
