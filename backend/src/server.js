@@ -24,6 +24,7 @@ app.post("/api/auth/google", async (req, res) => {
             "ibrahimerandhawa@gmail.com", 
             "4andrew.siv@gmail.com",  
             "christianb62791@gmail.com",       
+	    "rch27@tamu.edu"
         ];
 
         const cashiers = [
