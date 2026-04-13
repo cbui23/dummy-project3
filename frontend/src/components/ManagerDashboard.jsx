@@ -11,7 +11,6 @@ export default function ManagerDashboard() {
         { id: 4, text: "Prepare quarterly revenue report", completed: false }
     ]);
 
-    // 1. Fetch Data on Mount
     useEffect(() => {
         refreshData();
     }, []);
@@ -19,145 +18,160 @@ export default function ManagerDashboard() {
     const refreshData = () => {
         fetch("http://localhost:8080/api/inventory")
             .then(res => res.json())
-            .then(data => {
-                // Safety check: Ensure data is an array to prevent crash
-                if (Array.isArray(data)) setInventory(data);
-                else setInventory([]);
-            })
-            .catch(err => {
-                console.error("Inventory fetch error:", err);
-                setInventory([]); // Default to empty list on error
-            });
+            .then(data => Array.isArray(data) ? setInventory(data) : setInventory([]))
+            .catch(() => setInventory([]));
 
         fetch("http://localhost:8080/api/employees")
             .then(res => res.json())
-            .then(data => {
-                // Safety check: Ensure data is an array
-                if (Array.isArray(data)) setEmployees(data);
-                else setEmployees([]);
-            })
-            .catch(err => {
-                console.error("Employee fetch error:", err);
-                setEmployees([]); // Default to empty list on error
-            });
+            .then(data => Array.isArray(data) ? setEmployees(data) : setEmployees([]))
+            .catch(() => setEmployees([]));
     };
 
-    // 2. Hire Employee Logic (Matches HomeView.java functionality)
     const hireEmployee = async () => {
-        const name = prompt("Enter new employee's full name:");
+        const name = prompt("Enter employee name:");
         const role = prompt("Enter role (manager/cashier):")?.toLowerCase();
-        
+
         if (name && (role === 'manager' || role === 'cashier')) {
-            const response = await fetch("http://localhost:8080/api/employees", {
+            const res = await fetch("http://localhost:8080/api/employees", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name, role })
             });
-            if (response.ok) refreshData();
+            if (res.ok) refreshData();
         } else {
-            alert("Invalid input. Please provide a name and a valid role.");
+            alert("Invalid input.");
         }
     };
 
-    // 3. Process Inventory for Chart (numeric to float conversion)
-    const lowStockData = (inventory || [])
-        .slice(0, 10)
-        .map(item => ({
-            ...item,
-            quantity: item.quantity ? parseFloat(item.quantity) : 0
+    // 🔥 NEW: Menu item creator
+    const addMenuItem = async () => {
+        const name = prompt("Item name:");
+        const category = prompt("Category:");
+        const base_price = prompt("Price:");
+        const description = prompt("Description:");
+        const recipe_id = prompt("Recipe ID (optional):");
+        const temperature = prompt("Temperature (H/C):")?.toUpperCase();
+
+        if (
+            name &&
+            category &&
+            base_price &&
+            !isNaN(parseFloat(base_price)) &&
+            (temperature === 'H' || temperature === 'C')
+        ) {
+            try {
+                const res = await fetch("http://localhost:8080/api/menuitems", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        name,
+                        category,
+                        base_price: parseFloat(base_price),
+                        description,
+                        recipe_id: recipe_id ? parseInt(recipe_id) : null,
+                        temperature
+                    })
+                });
+
+                if (res.ok) {
+                    alert("Menu item added!");
+                } else {
+                    alert("Failed to add item.");
+                }
+            } catch (err) {
+                alert("Error adding item.");
+            }
+        } else {
+            alert("Invalid input.");
+        }
+    };
+
+    const lowStockData = (inventory || []).slice(0, 10).map(item => ({
+        ...item,
+        quantity: item.quantity ? parseFloat(item.quantity) : 0
     }));
 
     return (
         <div style={containerStyle}>
-            {/* --- DASHBOARD HEADER --- */}
             <header style={headerSection}>
                 <div>
                     <h1 style={titleStyle}>Aura <span style={{fontWeight:'300'}}>Manager</span></h1>
                     <p style={subtitleStyle}>Real-time supply chain & team overview</p>
                 </div>
                 <div style={dateBox}>
-                    {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    {new Date().toLocaleDateString()}
                 </div>
             </header>
 
             <div style={dashboardGrid}>
-                
-                {/* --- 1. INVENTORY BAR CHART (From InventoryView.java) --- */}
+
+                {/* INVENTORY */}
                 <div style={cardStyle}>
                     <div style={cardHeader}>
                         <h3>Low Stock Alerts</h3>
                         <span style={badgeStyle}>Top 10 Critical</span>
                     </div>
-                    <div style={{height: '300px', marginTop: '20px'}}>
+                    <div style={{height: '300px'}}>
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={lowStockData} layout="vertical" margin={{ left: 20, right: 30 }}>
-                                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                            <BarChart data={lowStockData} layout="vertical">
+                                <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis type="number" hide />
-                                <YAxis 
-                                    dataKey="name" 
-                                    type="category" 
-                                    width={100} 
-                                    style={{fontSize: '12px', fontWeight: '600', fill: '#64748b'}} 
-                                />
-                                <Tooltip 
-                                    cursor={{fill: '#f8fafc'}}
-                                    contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
-                                />
-                                <Bar dataKey="quantity" radius={[0, 8, 8, 0]} barSize={20}>
-                                    {lowStockData.map((entry, index) => (
-                                        <Cell 
-                                            key={`cell-${index}`} 
-                                            fill={entry.quantity < 20 ? '#ef4444' : '#10b981'} 
-                                        />
+                                <YAxis dataKey="name" type="category" width={100} />
+                                <Tooltip />
+                                <Bar dataKey="quantity">
+                                    {lowStockData.map((entry, i) => (
+                                        <Cell key={i} fill={entry.quantity < 20 ? '#ef4444' : '#10b981'} />
                                     ))}
                                 </Bar>
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
-                    <p style={footerNote}>Items turn <span style={{color:'#ef4444', fontWeight:'bold'}}>red</span> below 20 units.</p>
                 </div>
 
-                {/* --- 2. TEAM DIRECTORY (From HomeView.java) --- */}
+                {/* TEAM */}
                 <div style={cardStyle}>
                     <div style={cardHeader}>
                         <h3>Team Directory</h3>
                         <button onClick={hireEmployee} style={addBtnStyle}>+ Hire Staff</button>
                     </div>
                     <div style={listScrollSection}>
-                        {employees.map((emp) => (
+                        {employees.map(emp => (
                             <div key={emp.employee_id} style={listItemStyle}>
                                 <div>
-                                    <div style={{fontWeight: '700', color: '#1e293b'}}>{emp.name}</div>
-                                    <div style={{fontSize: '12px', color: '#64748b'}}>ID: #{emp.employee_id}</div>
+                                    <div>{emp.name}</div>
+                                    <div>ID: #{emp.employee_id}</div>
                                 </div>
-                                <span style={emp.role === 'manager' ? managerBadge : cashierBadge}>
-                                    {emp.role}
-                                </span>
+                                <span>{emp.role}</span>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* --- 3. DAILY AGENDA (From HomeView.java) --- */}
+                {/* TASKS */}
                 <div style={cardStyle}>
                     <div style={cardHeader}>
                         <h3>Daily Agenda</h3>
                     </div>
-                    <div style={listScrollSection}>
-                        {tasks.map(task => (
-                            <div key={task.id} style={listItemStyle}>
-                                <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
-                                    <div style={task.completed ? checkStyle : uncheckStyle}>
-                                        {task.completed && "✓"}
-                                    </div>
-                                    <span style={task.completed ? strikeText : regularText}>{task.text}</span>
-                                </div>
-                            </div>
-                        ))}
-                        <div style={{marginTop: '20px', textAlign: 'center'}}>
-                            <button style={secondaryBtn}>Edit Agenda</button>
-                        </div>
+                    {tasks.map(task => (
+                        <div key={task.id}>{task.text}</div>
+                    ))}
+                </div>
+
+                {/* 🔥 NEW MENU MANAGEMENT CARD */}
+                <div style={cardStyle}>
+                    <div style={cardHeader}>
+                        <h3>Menu Management</h3>
                     </div>
+
+                    <div style={{ textAlign: 'center', marginTop: '30px' }}>
+                        <button onClick={addMenuItem} style={addBtnStyle}>
+                            + Add New Menu Item
+                        </button>
+                    </div>
+
+                    <p style={{ marginTop: '20px', fontSize: '12px', textAlign: 'center', color: '#64748b' }}>
+                        Create new drinks and menu offerings for customers.
+                    </p>
                 </div>
 
             </div>
@@ -165,29 +179,19 @@ export default function ManagerDashboard() {
     );
 }
 
-/** --- AURA STYLES --- **/
-const containerStyle = { padding: '40px', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: "'Inter', sans-serif" };
-const headerSection = { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px' };
-const titleStyle = { fontSize: '2.5rem', fontWeight: '800', color: '#1b4332', margin: 0 };
-const subtitleStyle = { color: '#64748b', fontSize: '1.1rem', margin: '5px 0 0 0' };
-const dateBox = { backgroundColor: 'white', padding: '10px 20px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', fontWeight: '600', color: '#1b4332' };
+/* STYLES */
+const containerStyle = { padding: '40px', backgroundColor: '#f8fafc', minHeight: '100vh' };
+const headerSection = { display: 'flex', justifyContent: 'space-between', marginBottom: '40px' };
+const titleStyle = { fontSize: '2.5rem', fontWeight: '800' };
+const subtitleStyle = { color: '#64748b' };
+const dateBox = { backgroundColor: 'white', padding: '10px 20px', borderRadius: '12px' };
 
 const dashboardGrid = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '30px' };
-const cardStyle = { backgroundColor: 'white', borderRadius: '30px', padding: '30px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9' };
-const cardHeader = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #f8fafc', paddingBottom: '15px' };
+const cardStyle = { backgroundColor: 'white', borderRadius: '30px', padding: '30px' };
+const cardHeader = { display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
 
-const listScrollSection = { maxHeight: '350px', overflowY: 'auto', paddingRight: '10px' };
-const listItemStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 0', borderBottom: '1px solid #f8fafc' };
+const listScrollSection = { maxHeight: '300px', overflowY: 'auto' };
+const listItemStyle = { display: 'flex', justifyContent: 'space-between', padding: '10px 0' };
 
-const badgeStyle = { fontSize: '11px', fontWeight: '700', backgroundColor: '#fee2e2', color: '#991b1b', padding: '4px 12px', borderRadius: '20px', textTransform: 'uppercase' };
-const addBtnStyle = { backgroundColor: '#1b4332', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '10px', fontWeight: '700', cursor: 'pointer', fontSize: '13px' };
-const secondaryBtn = { backgroundColor: '#f1f5f9', color: '#475569', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: '600', cursor: 'pointer' };
-
-const managerBadge = { backgroundColor: '#dcfce7', color: '#166534', padding: '4px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: '800', textTransform: 'uppercase' };
-const cashierBadge = { backgroundColor: '#f1f5f9', color: '#475569', padding: '4px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: '800', textTransform: 'uppercase' };
-
-const checkStyle = { width: '20px', height: '20px', borderRadius: '6px', backgroundColor: '#10b981', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' };
-const uncheckStyle = { width: '20px', height: '20px', borderRadius: '6px', border: '2px solid #cbd5e1' };
-const strikeText = { color: '#94a3b8', textDecoration: 'line-through' };
-const regularText = { color: '#334155', fontWeight: '500' };
-const footerNote = { fontSize: '12px', color: '#94a3b8', marginTop: '15px', textAlign: 'center' };
+const badgeStyle = { backgroundColor: '#fee2e2', padding: '4px 12px', borderRadius: '20px' };
+const addBtnStyle = { backgroundColor: '#1b4332', color: 'white', padding: '10px 18px', borderRadius: '10px', cursor: 'pointer' };
