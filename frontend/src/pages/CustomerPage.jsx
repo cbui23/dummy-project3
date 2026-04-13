@@ -4,6 +4,7 @@ import { fetchMenu, placeOrder } from "../services/api";
 import Weather from '../components/Weather';
 
 export default function CustomerPage() {
+  //main menu and cart state
   const [menuItems, setMenuItems] = useState([]);
   const [cart, setCart] = useState([]);
   const [message, setMessage] = useState("");
@@ -22,6 +23,7 @@ export default function CustomerPage() {
 
   const tempInflectionPoint = 60; //temperature recommendation breakpoint
 
+  //load menu items from the backend on page mount
   useEffect(() => {
     async function loadMenu() {
       try {
@@ -43,8 +45,10 @@ export default function CustomerPage() {
       .catch(err => console.error("Weather fetch failed:", err));
   }, []);
 
+  //helper to normalize category strings from the db
   const getCleanCat = (item) => item.category ? item.category.toString().trim().toLowerCase() : "";
 
+  //separate toppings from drinks so we can show them in the modal
   const toppingsOptions = useMemo(() => 
     menuItems.filter(item => getCleanCat(item) === 'topping'), 
   [menuItems]);
@@ -73,10 +77,12 @@ export default function CustomerPage() {
     return drinks.filter(item => getCleanCat(item) === activeCategory);
   }, [menuItems, activeCategory, weatherTemp]);
 
+  //total number of items in cart for the badge
   const totalItemsCount = useMemo(() => 
     cart.reduce((sum, item) => sum + item.quantity, 0), 
   [cart]);
 
+  //total price including toppings and quantity
   const totalAmount = useMemo(() => 
     cart.reduce((sum, item) => {
       const toppingTotal = item.toppings.reduce((s, t) => s + t.price, 0);
@@ -94,6 +100,7 @@ export default function CustomerPage() {
       const drinks = menuItems.filter(item => getCleanCat(item) !== 'topping');
       let pool = drinks;
       
+      //bias the pool toward weather-appropriate drinks
       if (weatherTemp !== null) {
         const preferred = weatherTemp >= 70 ? 'C' : 'H';
         const biased = drinks.filter(d => d.temperature === preferred);
@@ -101,6 +108,7 @@ export default function CustomerPage() {
       }
 
       const pick = pool[Math.floor(Math.random() * pool.length)];
+      //rarity roll: 60% common, 30% rare, 10% ultra rare
       const rarityRoll = Math.random();
       const rarity = rarityRoll < 0.6 ? 'Common' : rarityRoll < 0.9 ? 'Rare' : 'Ultra Rare';
       const rarityColor = rarity === 'Ultra Rare' ? '#f59e0b' : rarity === 'Rare' ? '#8b5cf6' : '#2d6a4f';
@@ -118,6 +126,7 @@ export default function CustomerPage() {
     setShowToppings(true);
   }
 
+  //toggle a topping on or off for the current item
   function toggleTopping(topping) {
     setSelectedToppings(prev => 
       prev.find(t => t.menu_item_id === topping.menu_item_id)
@@ -126,6 +135,7 @@ export default function CustomerPage() {
     );
   }
 
+  //add the item with selected toppings to cart, increment qty if already exists
   function confirmAddToCart() {
     const cartId = `${pendingItem.menu_item_id}-${selectedToppings.map(t => t.menu_item_id).sort().join('-')}`;
     setCart((prev) => {
@@ -145,12 +155,14 @@ export default function CustomerPage() {
     setShowToppings(false);
   }
 
+  //delta is +1 or -1, removes item if quantity hits 0
   function changeQuantity(cartId, delta) {
     setCart(prev => prev.map(item => 
       item.cartId === cartId ? { ...item, quantity: item.quantity + delta } : item
     ).filter(item => item.quantity > 0));
   }
 
+  //flatten cart into individual order items and send to backend
   async function handlePlaceOrder() {
     if (cart.length === 0) return;
     try {
