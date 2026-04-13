@@ -17,7 +17,11 @@ const ChatBot = () => {
     setInput("");
 
     try {
+<<<<<<< HEAD
       const res = await fetch("http://localhost:8080/api/chat", {
+=======
+      const res = await fetch("https://dummy-project3-1.onrender.com/api/chat", {
+>>>>>>> main
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: input }),

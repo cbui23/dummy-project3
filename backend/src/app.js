@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config(); 
+dotenv.config();
 
 import express from "express";
 import cors from "cors";
@@ -9,12 +9,14 @@ import inventoryRoutes from "./routes/inventoryRoutes.js";
 import managerRoutes from "./routes/managerRoutes.js";
 
 const app = express();
+
+// --- MIDDLEWARE (MUST BE AT THE TOP) ---
 app.use(cors());
 app.use(express.json());
 
 // --- AI CHAT ROUTE (GROQ + MENU KNOWLEDGE) ---
 app.post("/api/chat", async (req, res) => {
-  const apiKey = process.env.GROQ_API_KEY; 
+  const apiKey = process.env.GROQ_API_KEY;
   const url = "https://api.groq.com/openai/v1/chat/completions";
 
   // 1. The Strict Knowledge Base
@@ -28,7 +30,18 @@ app.post("/api/chat", async (req, res) => {
   `;
 
   // 2. The Strict Instructions
-  const systemInstructions = "You are Reveille-Bot, the friendly mascot for Reveille Bubble Tea. Always be polite, say 'Howdy' or 'Gig 'em', and ONLY use the provided menu and prices. Keep it to one sentence.";
+  const systemInstructions = `
+  You are Reveille-Bot, the official spirit-leader of Reveille Boba. 
+  Your personality: Energetic, polite, and proud to be an Aggie (use 'Howdy' and 'Gig 'em').
+  
+  CORE RULES:
+  1. If a user asks a general question (e.g., 'How are you?' or 'What's up?'), respond with Aggie pride and school spirit!
+  2. If they ask about the menu, ONLY use the provided prices and items.
+  3. If they ask for a recommendation, suggest a drink based on their mood (e.g., "Need energy? Try a Matcha Latte!").
+  4. If they ask for something NOT on the menu (like sandwiches or pizza), politely say: 
+     "As much as I'd love a snack, we only serve the best boba in Aggieland! Can I interest you in a tea instead?"
+  5. Keep responses concise (2-3 sentences).
+  `;
 
   try {
     const response = await fetch(url, {
@@ -39,26 +52,41 @@ app.post("/api/chat", async (req, res) => {
       },
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
-        temperature: 0.0, // Absolute zero creativity
+        temperature: 0.6,
         messages: [
           { role: "system", content: systemInstructions },
           { 
             role: "user", 
-            content: `Context: ${menuData}\n\nUser Question: ${req.body.message}\n\nAnswer only using the context provided:` 
+            content: `
+              [MENU DATA]
+              ${menuData}
+
+              [USER MESSAGE]
+              ${req.body.message}
+
+              Assistant Instruction: Respond naturally. If the message is a greeting, be friendly. 
+              If it's a question about the shop, use the Menu Data.
+            ` 
           }
         ],
-        max_completion_tokens: 50 
+        max_completion_tokens: 100 // Increased slightly so it doesn't cut off mid-sentence
       })
     });
 
     const data = await response.json();
-    const reply = data.choices[0].message.content;
     
+    if (data.error) {
+      console.error("Groq API Error:", data.error);
+      return res.status(500).json({ error: "AI API error" });
+    }
+
+    const reply = data.choices[0].message.content;
     console.log("✅ Bot Replied:", reply);
     res.json({ reply });
 
   } catch (error) {
-    res.status(500).json({ error: "AI error" });
+    console.error("Backend Error:", error);
+    res.status(500).json({ error: "Server connection error" });
   }
 });
 
@@ -80,8 +108,9 @@ app.use("/api/manager", managerRoutes);
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🔑 Groq API Key Detected: ${process.env.GROQ_API_KEY ? "YES" : "NO"}`);
 });
+
 
 export default app;
