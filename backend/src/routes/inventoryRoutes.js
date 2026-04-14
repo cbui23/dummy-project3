@@ -7,15 +7,16 @@ const router = express.Router();
  * GET /api/inventory
  * Fills the Admin table with all stock items.
  */
+// Change your query inside this route
 router.get("/", async (req, res) => {
-  try {
-    // NOTE: Make sure 'inventory' and 'ingredient_id' match your Project 2 table names!
-    const result = await pool.query("SELECT * FROM inventory ORDER BY ingredient_id ASC");
-    res.json(result.rows);
-  } catch (err) {
-    console.error("GET /api/inventory failed:", err);
-    res.status(500).json({ error: err.message });
-  }
+    try {
+        // Updated to use your actual column: inventory_id
+        const result = await pool.query("SELECT inventory_id, name, quantity, unit FROM inventory ORDER BY quantity ASC");
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 /**

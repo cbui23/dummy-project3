@@ -7,6 +7,7 @@ import menuRoutes from "./routes/menuRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import inventoryRoutes from "./routes/inventoryRoutes.js";
 import managerRoutes from "./routes/managerRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
 
 const app = express();
 
@@ -105,11 +106,13 @@ app.use("/api/menu", menuRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/manager", managerRoutes);
+app.use("/api/reports", reportRoutes);
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🔑 Groq API Key Detected: ${process.env.GROQ_API_KEY ? "YES" : "NO"}`);
 });
+
 
 export default app;

@@ -20,4 +20,22 @@ router.get("/", async (req, res) => {
   }
 });
 
+router.post("/menuitems", async (req, res) => {
+  const{ menu_item_id, name, category, base_price, description, recipe_id, temperature } = req.body;
+  try{
+    const query = `
+      INSERT INTO menuitems (menu_item_id, name, category, base_price, description, recipe_id, temperature)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `;
+    await pool.query(query, [menu_item_id, name, category, base_price, description, recipe_id, temperature]);
+    res.status(200).send("Item added successfully");
+  }catch(err){
+
+    console.error("POST /api/menu/menuitems failed:", err);
+    res.status(500).send("Database insert failed");
+  }
+});
+
+
+
 export default router;
