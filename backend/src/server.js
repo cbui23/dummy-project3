@@ -1,6 +1,6 @@
 import app from "./app.js";
 import { OAuth2Client } from 'google-auth-library';
-import pool from "./config/db.js"; // <--- CRITICAL: You must import your DB pool!
+import pool from "./config/db.js"; 
 
 // 1. Configuration
 const PORT = process.env.PORT || 8080;
@@ -16,15 +16,16 @@ app.post("/api/auth/google", async (req, res) => {
             audience: CLIENT_ID,
         });
         const payload = ticket.getPayload();
-        const userEmail = payload.email;
+        const userEmail = payload.email.toLowerCase(); // Ensure case-insensitivity
 
+        // Cleaned up Whitelist
         const managers = [
             "ok.samgarces@gmail.com",
             "reveille.bubbletea@gmail.com", 
             "ibrahimerandhawa@gmail.com", 
             "4andrew.siv@gmail.com",  
-            "christianb62791@gmail.com",       
-	    "rch27@tamu.edu"
+            "christianb62791@gmail.com",      
+            "rch27@tamu.edu"
         ];
 
         const cashiers = [
@@ -32,8 +33,7 @@ app.post("/api/auth/google", async (req, res) => {
             "cqb.23000@tamu.edu",
             "andrewsiv14@tamu.edu",
             "garcesam0@tamu.edu",
-            "ibrahime@tamu.edu",
-            "rch27@tamu.edu"
+            "ibrahime@tamu.edu"
         ];
 
         let assignedRole = null;
@@ -42,6 +42,7 @@ app.post("/api/auth/google", async (req, res) => {
         } else if (cashiers.includes(userEmail)) {
             assignedRole = "cashier";
         } else {
+            console.warn(`Blocked access attempt: ${userEmail}`);
             return res.status(403).json({ error: "Access denied. Email not whitelisted." });
         }
 
@@ -56,18 +57,18 @@ app.post("/api/auth/google", async (req, res) => {
     }
 });
 
-// 3. Inventory Route (Returns [] on error to prevent frontend crash)
+// 3. Inventory Route
 app.get("/api/inventory", async (req, res) => {
     try {
         const result = await pool.query("SELECT inventory_id, name, quantity, unit FROM inventory ORDER BY quantity ASC");
         res.json(result.rows);
     } catch (err) {
         console.error("Inventory Fetch Error:", err.message);
-        res.status(500).json([]); // Send empty array so .map() doesn't break
+        res.status(500).json([]); 
     }
 });
 
-// 4. Employees Route (Returns [] on error)
+// 4. Employees Route
 app.get("/api/employees", async (req, res) => {
     try {
         const result = await pool.query("SELECT employee_id, name, role, shift_status FROM employees ORDER BY name ASC");
@@ -96,7 +97,9 @@ app.post("/api/employees", async (req, res) => {
     }
 });
 
-// 6. Start the server
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Aura Backend running on port ${PORT}`);
-});
+// 6. Start the server (Only if not in test mode)
+if (process.env.NODE_ENV !== 'test') {
+    app.listen(PORT, "0.0.0.0", () => {
+        console.log(`🚀 Aura Backend running on port ${PORT}`);
+    });
+}
