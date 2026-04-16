@@ -3,12 +3,20 @@ import React, { useState, useEffect } from "react";
 const Weather = () => {
   const [temp, setTemp] = useState(null);
 
+  // --- DYNAMIC URL LOGIC ---
+  const VITE_URL = import.meta.env.VITE_API_URL;
+  // This removes the trailing slash and ensures the path is /api/weather
+  const API_BASE = VITE_URL 
+    ? `${VITE_URL.replace(/\/+$/, "")}/api` 
+    : "http://localhost:8080/api";
+
   useEffect(() => {
-    fetch("http://localhost:8080/api/weather")
+    // FIXED: Use backticks and the dynamic API_BASE
+    fetch(`${API_BASE}/weather`)
       .then(res => res.json())
       .then(data => setTemp(data.temp))
       .catch(err => console.error("Frontend fetch failed:", err));
-  }, []);
+  }, [API_BASE]);
 
   // Aura loading state
   if (temp === null) return (

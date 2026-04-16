@@ -1,6 +1,8 @@
 // Check for the environment variable, ensuring we handle the /api suffix correctly
 const VITE_URL = import.meta.env.VITE_API_URL;
-const API_BASE = VITE_URL ? `${VITE_URL}/api` : "http://localhost:8080/api";
+const API_BASE = VITE_URL 
+  ? `${VITE_URL.replace(/\/+$/, "")}/api` 
+  : "http://localhost:8080/api";
 
 /**
  * HELPER: Standard fetch config to ensure cookies (Google Auth) are sent.

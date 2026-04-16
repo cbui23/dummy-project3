@@ -9,9 +9,7 @@ export default function PortalPage() {
     const rawUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
   
     // Clean the URL by removing any trailing slashes
-    const cleanUrl = rawUrl.replace(/\/+$/, ""); 
-    
-    // This ensures it's always https://domain.com/auth/google
+    const cleanUrl = (import.meta.env.VITE_API_URL || "http://localhost:8080").replace(/\/+$/, "");
     window.location.href = `${cleanUrl}/auth/google?state=${destination}`;
 
   };
@@ -70,7 +68,7 @@ export default function PortalPage() {
       {/* Header */}
       <div style={{ textAlign: "center", marginBottom: "4rem" }}>
         <h1 style={{ fontSize: "4.5rem", margin: "0", fontWeight: "800", color: "#1b4332" }}>
-          aura <span style={{fontWeight:'300'}}>boba7</span>
+          aura <span style={{fontWeight:'300'}}>boba9</span>
         </h1>
         <p style={{ color: "#2d6a4f", fontSize: "0.75rem", marginTop: "10px", textTransform: "uppercase", letterSpacing: "0.6rem", opacity: 0.6 }}>
           est. 2026
