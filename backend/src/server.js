@@ -1,13 +1,39 @@
-import app from "./app.js";
+import dotenv from "dotenv";
+dotenv.config();
+
+import express from "express";
+import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 import { OAuth2Client } from 'google-auth-library';
 import pool from "./config/db.js"; 
 
-// 1. Configuration
-const PORT = process.env.PORT || 8080;
+// --- Route Imports ---
+import menuRoutes from "./routes/menuRoutes.js";
+import orderRoutes from "./routes/orderRoutes.js";
+import inventoryRoutes from "./routes/inventoryRoutes.js";
+import managerRoutes from "./routes/managerRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
+
+const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// --- 1. Middleware & CORS (CRITICAL FOR RENDER) ---
+const allowedOrigin = process.env.CLIENT_URL || "http://localhost:5173";
+app.use(cors({
+  origin: allowedOrigin,
+  credentials: true, // This allows Google OAuth session cookies to pass
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+app.use(express.json());
+
+// --- 2. Google OAuth Configuration ---
 const CLIENT_ID = "2055879532-b174qi00vahh6i55j79m27je0bkeosjq.apps.googleusercontent.com";
 const client = new OAuth2Client(CLIENT_ID);
 
-// 2. Auth Route
+// --- 3. Auth Route (With Loyalty Upsert) ---
 app.post("/api/auth/google", async (req, res) => {
     const { token } = req.body;
     try {
@@ -17,110 +43,58 @@ app.post("/api/auth/google", async (req, res) => {
         });
         const payload = ticket.getPayload();
         const userEmail = payload.email;
-        const googleId = payload.sub; // Unique numeric ID from Google
+        const googleId = payload.sub;
         const fullName = payload.name;
-        const firstName = payload.name.split(' ')[0];
 
-        // --- Whitelists ---
-        const managers = [
-            "ok.samgarces@gmail.com",
-            "reveille.bubbletea@gmail.com", 
-            "ibrahimerandhawa@gmail.com", 
-            "4andrew.siv@gmail.com",  
-            "christianb62791@gmail.com",       
-            "rch27@tamu.edu"
-        ];
+        // Whitelists
+        const managers = ["ok.samgarces@gmail.com", "reveille.bubbletea@gmail.com", "ibrahimerandhawa@gmail.com", "4andrew.siv@gmail.com", "christianb62791@gmail.com", "rch27@tamu.edu"];
+        const cashiers = ["purigarv@tamu.edu", "cqb.23000@tamu.edu", "andrewsiv14@tamu.edu", "garcesam0@tamu.edu", "ibrahime@tamu.edu"];
 
-        const cashiers = [
-            "purigarv@tamu.edu",
-            "cqb.23000@tamu.edu",
-            "andrewsiv14@tamu.edu",
-            "garcesam0@tamu.edu",
-            "ibrahime@tamu.edu"
-        ];
+        let role = "customer";
+        if (managers.includes(userEmail)) role = "manager";
+        else if (cashiers.includes(userEmail)) role = "cashier";
 
-        let assignedRole = null;
-
-        // Check Roles
-        if (managers.includes(userEmail)) {
-            assignedRole = "manager";
-        } else if (cashiers.includes(userEmail)) {
-            assignedRole = "cashier";
-        } else {
-            // NEW: If not an employee, handle as a Customer
-            assignedRole = "customer";
-            
-            try {
-                // Upsert customer: Insert if new, or do nothing if already exists
-                // We use the 'sub' from Google as our customer_id
-                await pool.query(
-                    `INSERT INTO customers (customer_id, name, stamps, lucky_draw_eligible, reward_points) 
-                     VALUES ($1, $2, 0, false, 0) 
-                     ON CONFLICT (customer_id) DO NOTHING`,
-                    [googleId, fullName]
-                );
-                console.log(`✅ Customer Handled: ${fullName} (${googleId})`);
-            } catch (dbErr) {
-                console.error("Database Error saving customer:", dbErr.message);
-                // We don't block login if DB fails, but we log it
-            }
+        // Logic for Customer Loyalty (Feature 3)
+        if (role === "customer") {
+            await pool.query(
+                `INSERT INTO public.customers (customer_id, name, stamps, lucky_draw_eligible, reward_points) 
+                 VALUES ($1, $2, 0, false, 0) ON CONFLICT (customer_id) DO NOTHING`,
+                [googleId, fullName]
+            );
         }
 
-        // Return the response to the frontend
-        res.json({ 
-            success: true, 
-            role: assignedRole,
-            name: firstName,
-            customer_id: googleId // Send this back so the frontend can use it for orders!
-        });
-
+        res.json({ success: true, role, name: fullName.split(' ')[0], customer_id: googleId });
     } catch (err) {
-        console.error("Auth Error:", err);
-        res.status(401).json({ error: "Invalid Google Token" });
+        res.status(401).json({ error: "Invalid Token" });
     }
 });
 
-// 3. Inventory Route
-app.get("/api/inventory", async (req, res) => {
-    try {
-        const result = await pool.query("SELECT inventory_id, name, quantity, unit FROM inventory ORDER BY quantity ASC");
-        res.json(result.rows);
-    } catch (err) {
-        console.error("Inventory Fetch Error:", err.message);
-        res.status(500).json([]); 
-    }
+// --- 4. API Routes ---
+app.use("/api/menu", menuRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/inventory", inventoryRoutes);
+app.use("/api/manager", managerRoutes);
+app.use("/api/reports", reportRoutes);
+
+// --- 5. AI Chat & Weather ---
+app.post("/api/chat", async (req, res) => {
+    // ... keep your existing Groq logic from app.js ...
 });
 
-// 4. Employees Route
-app.get("/api/employees", async (req, res) => {
-    try {
-        const result = await pool.query("SELECT employee_id, name, role, shift_status FROM employees ORDER BY name ASC");
-        res.json(result.rows);
-    } catch (err) {
-        console.error("Employee Fetch Error:", err.message);
-        res.status(500).json([]); 
-    }
+app.get("/api/weather", async (req, res) => {
+    // ... keep your existing Open-Meteo logic from app.js ...
 });
 
-// 5. Add Employee Route
-app.post("/api/employees", async (req, res) => {
-    const { name, role } = req.body;
-    try {
-        const idRes = await pool.query("SELECT MAX(employee_id) FROM employees");
-        const nextId = (idRes.rows[0].max || 0) + 1;
-        
-        await pool.query(
-            "INSERT INTO employees (employee_id, name, role, shift_status) VALUES ($1, $2, $3, false)", 
-            [nextId, name, role]
-        );
-        res.json({ success: true });
-    } catch (err) {
-        console.error("Add Employee Error:", err.message);
-        res.status(500).json({ error: err.message });
-    }
+// --- 6. Deployment Logic (Serving Frontend) ---
+const buildPath = path.join(__dirname, "../../frontend/dist");
+app.use(express.static(buildPath));
+app.get(/^(?!\/api).+/, (req, res) => {
+    res.sendFile(path.join(buildPath, "index.html"));
 });
 
-// 6. Start the server
+// --- 7. Server Start ---
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Aura Backend running on port ${PORT}`);
+    console.log(`🚀 Aura Backend running on port ${PORT}`);
+    console.log(`👉 Accepting requests from: ${allowedOrigin}`);
 });
