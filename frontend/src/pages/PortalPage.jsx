@@ -6,9 +6,13 @@ export default function PortalPage() {
   // Logic to handle the redirect and save the clicked destination
   const handleProtectedLogin = (e, destination) => {
     e.preventDefault();
-    // Ensure this points to /auth/google, NOT /api/auth/google
-    const BACKEND_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
-    window.location.href = `${BACKEND_URL}/auth/google?state=${destination}`; 
+    const rawUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
+  
+    // Clean the URL by removing any trailing slashes
+    const cleanUrl = rawUrl.replace(/\/+$/, ""); 
+    
+    // This ensures it's always https://domain.com/auth/google
+    window.location.href = `${cleanUrl}/auth/google?state=${destination}`;
   };
 
   const cardStyle = {
@@ -65,7 +69,7 @@ export default function PortalPage() {
       {/* Header */}
       <div style={{ textAlign: "center", marginBottom: "4rem" }}>
         <h1 style={{ fontSize: "4.5rem", margin: "0", fontWeight: "800", color: "#1b4332" }}>
-          aura <span style={{fontWeight:'300'}}>boba1</span>
+          aura <span style={{fontWeight:'300'}}>boba2</span>
         </h1>
         <p style={{ color: "#2d6a4f", fontSize: "0.75rem", marginTop: "10px", textTransform: "uppercase", letterSpacing: "0.6rem", opacity: 0.6 }}>
           est. 2026

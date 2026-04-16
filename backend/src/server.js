@@ -20,6 +20,12 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// At the top of server.js where you define the redirect URL
+const rawBackendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+const cleanBackendUrl = rawBackendUrl.replace(/\/+$/, ""); // Removes any trailing slashes
+
+const REDIRECT_URI = `${cleanBackendUrl}/auth/google/callback`;
+
 // --- 1. Middleware & CORS ---
 const allowedOrigin = process.env.CLIENT_URL || "http://localhost:5173";
 app.use(cors({
