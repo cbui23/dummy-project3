@@ -6,8 +6,8 @@ export default function PortalPage() {
   // Logic to handle the redirect and save the clicked destination
   const handleProtectedLogin = (e, destination) => {
     e.preventDefault();
+    // Ensure this points to /auth/google, NOT /api/auth/google
     const BACKEND_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
-    // Pass the destination in the URL
     window.location.href = `${BACKEND_URL}/auth/google?state=${destination}`; 
   };
 
